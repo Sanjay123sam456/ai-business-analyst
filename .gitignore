@@ -1,0 +1,16 @@
+.venv/
+.tmp/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local runtime artifacts
+.streamlit_err.log
+.streamlit_out.log
+
+# Data artifacts
+data/business.db
+data/uploaded.csv
+data/sample_sales.csv
