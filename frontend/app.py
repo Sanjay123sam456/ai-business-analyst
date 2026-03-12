@@ -6,6 +6,7 @@ import sys
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from dotenv import load_dotenv
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -18,6 +19,9 @@ from utils.data_loader import load_sample_data
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 UPLOADED_CSV_PATH = os.path.join(DATA_DIR, "uploaded.csv")
+
+# Load local environment variables for development (Render uses dashboard env vars).
+load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
 DEFAULT_EXAMPLES = [
     "Show top 10 rows from this dataset.",
@@ -224,13 +228,11 @@ if "pending_question" in st.session_state:
 
 with st.sidebar:
     st.header("Configuration")
-    api_key = st.text_input(
-        "OpenRouter API Key",
-        type="password",
-        value=os.getenv("OPENROUTER_API_KEY", ""),
-    )
-    if api_key:
-        os.environ["OPENROUTER_API_KEY"] = api_key
+    if os.getenv("OPENROUTER_API_KEY"):
+        st.success("OpenRouter key is loaded from server environment.")
+    else:
+        st.error("Server is missing OPENROUTER_API_KEY.")
+        st.caption("Set OPENROUTER_API_KEY in Render Environment Variables.")
 
     st.divider()
     st.header("Data Source")
@@ -299,7 +301,7 @@ for idx, ex in enumerate(examples):
 
 if analyze and question:
     if not os.getenv("OPENROUTER_API_KEY"):
-        st.error("Please enter your OpenRouter API Key in the sidebar.")
+        st.error("Server is missing OPENROUTER_API_KEY. Please set it in Render environment variables.")
         st.stop()
 
     try:

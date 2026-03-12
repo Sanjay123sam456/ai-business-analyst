@@ -10,6 +10,11 @@ __pycache__/
 .streamlit_err.log
 .streamlit_out.log
 
+# Local secrets
+.env
+.env.*
+!.env.example
+
 # Data artifacts
 data/business.db
 data/uploaded.csv

@@ -24,7 +24,7 @@ def generate_text(prompt: str, max_output_tokens: int = 600, temperature: float 
     api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
 
     if not api_key:
-        raise ValueError("Missing OPENROUTER_API_KEY. Add it in the sidebar before running analysis.")
+        raise ValueError("Missing OPENROUTER_API_KEY on server environment.")
 
     model = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001").strip()
 
