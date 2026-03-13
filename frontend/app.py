@@ -1,5 +1,7 @@
 ﻿import io
+import html
 import os
+import re
 import sqlite3
 import sys
 
@@ -138,6 +140,11 @@ def load_uploaded_csv_to_db(uploaded_file, table_name: str = "sales"):
         c.strip().replace("\xa0", " ").lower().replace(" ", "_").replace("-", "_")
         for c in df.columns
     ]
+    for col in df.columns:
+        if any(k in col for k in ["date", "time", "month", "year", "day"]):
+            parsed = pd.to_datetime(df[col], errors="coerce", infer_datetime_format=True)
+            if parsed.notna().mean() >= 0.8:
+                df[col] = parsed.dt.strftime("%Y-%m-%d")
 
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
@@ -147,6 +154,140 @@ def load_uploaded_csv_to_db(uploaded_file, table_name: str = "sales"):
         conn.close()
 
     return df.shape, list(df.columns)
+
+
+def _humanize_label(col_name: str) -> str:
+    return col_name.replace("_", " ").title()
+
+
+def _is_date_like(col_name: str) -> bool:
+    name = col_name.lower()
+    return any(k in name for k in ["date", "time", "month", "year", "day"])
+
+
+def _style_dark_plot(fig):
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Segoe UI, Arial, sans-serif", color="#EAF2FF", size=12),
+        title_font=dict(size=15, color="#EAF2FF"),
+        margin=dict(l=20, r=20, t=50, b=20),
+        legend_title_text="",
+    )
+    fig.update_xaxes(
+        gridcolor="rgba(180,200,220,0.12)",
+        zerolinecolor="rgba(180,200,220,0.18)",
+        tickfont=dict(color="#DDE7F5"),
+    )
+    fig.update_yaxes(
+        gridcolor="rgba(180,200,220,0.12)",
+        zerolinecolor="rgba(180,200,220,0.18)",
+        tickfont=dict(color="#DDE7F5"),
+    )
+
+
+def build_visualization(df: pd.DataFrame):
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+    if not numeric_cols:
+        non_numeric_cols = df.select_dtypes(exclude="number").columns.tolist()
+        if len(non_numeric_cols) == 1 and len(df) > 1:
+            col = non_numeric_cols[0]
+            counts = (
+                df[col]
+                .astype(str)
+                .value_counts(dropna=False)
+                .head(20)
+                .rename_axis(col)
+                .reset_index(name="count")
+            )
+            fig = px.bar(
+                counts,
+                x=col,
+                y="count",
+                color_discrete_sequence=["#37A2FF"],
+                title=f"Top Values in {_humanize_label(col)}",
+            )
+            _style_dark_plot(fig)
+            return fig, None
+        return None, "Result has no numeric metric to plot."
+
+    non_numeric_cols = [c for c in df.columns if c not in numeric_cols]
+    date_cols = [c for c in df.columns if _is_date_like(c)]
+    color_seq = ["#37A2FF"]
+
+    # Summary query: single row with multiple numeric metrics.
+    if len(df) == 1 and len(numeric_cols) >= 2:
+        metric_frame = pd.DataFrame(
+            {
+                "metric": [_humanize_label(c) for c in numeric_cols],
+                "value": [float(df.iloc[0][c]) for c in numeric_cols],
+            }
+        )
+        fig = px.bar(
+            metric_frame,
+            x="metric",
+            y="value",
+            color_discrete_sequence=color_seq,
+            title="Summary Metrics",
+        )
+        _style_dark_plot(fig)
+        return fig, None
+
+    # Single scalar doesn't need a chart.
+    if len(df) == 1 and len(numeric_cols) == 1:
+        return None, "Query returned one numeric value, so chart is skipped."
+
+    # Time-series style chart when date-like column exists.
+    if date_cols and numeric_cols:
+        x_col = date_cols[0]
+        y_col = numeric_cols[0]
+        temp = df.copy()
+        parsed = pd.to_datetime(temp[x_col], errors="coerce")
+        if parsed.notna().sum() > 0:
+            temp = temp.assign(_parsed_date=parsed).sort_values("_parsed_date")
+            fig = px.line(
+                temp,
+                x=x_col,
+                y=y_col,
+                color_discrete_sequence=color_seq,
+                title=f"{_humanize_label(y_col)} Trend",
+            )
+            _style_dark_plot(fig)
+            return fig, None
+
+    # Category vs metric chart.
+    if non_numeric_cols and numeric_cols:
+        x_col = non_numeric_cols[0]
+        y_col = numeric_cols[0]
+        temp = (
+            df.groupby(x_col, as_index=False)[y_col]
+            .sum()
+            .sort_values(y_col, ascending=False)
+            .head(20)
+        )
+        fig = px.bar(
+            temp,
+            x=x_col,
+            y=y_col,
+            color_discrete_sequence=color_seq,
+            title=f"{_humanize_label(y_col)} by {_humanize_label(x_col)}",
+        )
+        _style_dark_plot(fig)
+        return fig, None
+
+    # Fallback: first numeric over row index.
+    fallback = df.reset_index().rename(columns={"index": "row_index"})
+    y_col = numeric_cols[0]
+    fig = px.line(
+        fallback,
+        x="row_index",
+        y=y_col,
+        color_discrete_sequence=color_seq,
+        title=f"{_humanize_label(y_col)} by Row",
+    )
+    _style_dark_plot(fig)
+    return fig, None
 
 
 st.set_page_config(
@@ -186,6 +327,11 @@ st.markdown(
         color: #e8f5e9;
         line-height: 1.65;
         white-space: pre-wrap;
+        max-height: 340px;
+        overflow-y: auto;
+        font-size: 1rem;
+        font-family: "Segoe UI", "Inter", "Helvetica Neue", sans-serif;
+        word-break: break-word;
     }
     .anomaly-box {
         background: #fff3e0;
@@ -194,6 +340,20 @@ st.markdown(
         border-radius: 8px;
         margin: 8px 0;
         color: #3e2723;
+    }
+    .viz-box {
+        background: linear-gradient(135deg, #101a2a, #0c1624);
+        border: 1px solid #2f5b87;
+        border-left: 4px solid #37A2FF;
+        border-radius: 10px;
+        padding: 14px 14px 6px 14px;
+        margin: 12px 0 14px;
+    }
+    .viz-title {
+        color: #dbeaff;
+        font-size: 0.98rem;
+        font-weight: 700;
+        margin-bottom: 8px;
     }
     .stButton > button {
         background: linear-gradient(135deg, #1e3a5f, #2196F3);
@@ -326,34 +486,13 @@ if analyze and question:
         st.markdown(f"**Query Results** - {len(df):,} rows returned")
         st.dataframe(df, use_container_width=True)
 
-        numeric_cols = df.select_dtypes(include="number").columns.tolist()
-        if len(df.columns) >= 2 and numeric_cols:
-            st.markdown("**Data Visualization:**")
-            x_col = df.columns[0]
-            y_col = numeric_cols[0]
-            if len(df) <= 50:
-                fig = px.bar(
-                    df,
-                    x=x_col,
-                    y=y_col,
-                    color_discrete_sequence=["#2196F3"],
-                    title=f"{y_col} by {x_col}",
-                )
-            else:
-                fig = px.line(
-                    df,
-                    x=x_col,
-                    y=y_col,
-                    color_discrete_sequence=["#2196F3"],
-                    title=f"{y_col} trend",
-                )
-            fig.update_layout(
-                plot_bgcolor="white",
-                paper_bgcolor="white",
-                font=dict(family="Arial"),
-                title_font_size=14,
-            )
+        fig, viz_note = build_visualization(df)
+        st.markdown('<div class="viz-box"><div class="viz-title">Data Visualization</div>', unsafe_allow_html=True)
+        if fig is not None:
             st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info(f"Visualization skipped: {viz_note or 'No plottable output.'}")
+        st.markdown("</div>", unsafe_allow_html=True)
 
         anomaly_report = detect_anomalies(df)
         if anomaly_report.get("anomalies"):
@@ -364,17 +503,34 @@ if analyze and question:
         with st.spinner("Generating AI insights..."):
             df_preview = df.head(20).to_string()
             explanation = explain_data(question, df_preview, anomaly_report)
+            explanation = re.sub(r"\n{3,}", "\n\n", explanation).strip()
+            explanation = re.sub(r"([,.;:])(?=\S)", r"\1 ", explanation)
+            explanation = re.sub(r"(?<=\d)(?=[A-Za-z])", " ", explanation)
 
         st.markdown("**AI Business Analysis:**")
-        st.markdown(f'<div class="insight-box">{explanation}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="insight-box">{html.escape(explanation)}</div>',
+            unsafe_allow_html=True,
+        )
 
         st.divider()
         csv = df.to_csv(index=False)
         st.download_button("Download Results as CSV", csv, "results.csv", "text/csv")
 
     except Exception as err:
-        st.error(f"Error: {err}")
-        st.caption("Try rephrasing your question or check your API key.")
+        message = str(err)
+        if "Cannot answer this question with current dataset schema" in message:
+            st.warning(message)
+            active_cols = st.session_state.get("active_columns", [])
+            if active_cols:
+                preview_cols = ", ".join(active_cols[:12])
+                if len(active_cols) > 12:
+                    preview_cols += ", ..."
+                st.caption(f"Available columns: {preview_cols}")
+            st.caption("Try asking using available columns or load a different dataset.")
+        else:
+            st.error(f"Error: {message}")
+            st.caption("Try rephrasing your question or check your API key.")
 
 elif not question and analyze:
     st.warning("Please enter a business question first.")
@@ -388,3 +544,4 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+

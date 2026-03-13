@@ -22,8 +22,9 @@ Instructions:
 - Explain what the data shows in plain business language
 - Identify the root cause if there is a problem
 - Give 2-3 specific actionable recommendations
-- Be concise but insightful
-- Format your response with clear sections
+- Be concise but insightful (max 180 words)
+- Use short markdown sections and bullet points
+- Keep spacing clean and readable
 
 Your Analysis:"""
 

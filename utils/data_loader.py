@@ -20,13 +20,25 @@ def _read_csv_with_fallback(csv_path: str) -> pd.DataFrame:
         "Please re-save your file as UTF-8 CSV and upload again."
     ) from last_error
 
-def load_csv_to_db(csv_path: str, table_name: str = "sales"):
-    df = _read_csv_with_fallback(csv_path)
-    # Clean column names
-    df.columns = [
+
+def _normalize_for_sqlite(df: pd.DataFrame) -> pd.DataFrame:
+    cleaned = df.copy()
+    cleaned.columns = [
         c.strip().replace("\xa0", " ").lower().replace(" ", "_").replace("-", "_")
-        for c in df.columns
+        for c in cleaned.columns
     ]
+
+    # Convert likely date columns to ISO format so SQLite date functions work.
+    for col in cleaned.columns:
+        if any(k in col for k in ["date", "time", "month", "year", "day"]):
+            parsed = pd.to_datetime(cleaned[col], errors="coerce", infer_datetime_format=True)
+            if parsed.notna().mean() >= 0.8:
+                cleaned[col] = parsed.dt.strftime("%Y-%m-%d")
+
+    return cleaned
+
+def load_csv_to_db(csv_path: str, table_name: str = "sales"):
+    df = _normalize_for_sqlite(_read_csv_with_fallback(csv_path))
     os.makedirs(DATA_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     df.to_sql(table_name, conn, if_exists="replace", index=False)
