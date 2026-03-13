@@ -291,12 +291,14 @@ def build_visualization(df: pd.DataFrame):
 
 
 def _query_flag(flag_name: str) -> bool:
-    params = st.experimental_get_query_params()
+    params = st.query_params
     if flag_name not in params:
         return False
-    raw_value = params.get(flag_name, ["1"])
+
+    raw_value = params.get(flag_name, "1")
     if isinstance(raw_value, list):
         raw_value = raw_value[0] if raw_value else "1"
+
     return str(raw_value).strip().lower() in {"", "1", "true", "yes", "y", "on"}
 
 
