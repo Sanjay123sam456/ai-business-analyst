@@ -290,11 +290,61 @@ def build_visualization(df: pd.DataFrame):
     return fig, None
 
 
+def _query_flag(flag_name: str) -> bool:
+    params = st.experimental_get_query_params()
+    if flag_name not in params:
+        return False
+    raw_value = params.get(flag_name, ["1"])
+    if isinstance(raw_value, list):
+        raw_value = raw_value[0] if raw_value else "1"
+    return str(raw_value).strip().lower() in {"", "1", "true", "yes", "y", "on"}
+
+
+def _sqlite_ready() -> tuple[bool, str]:
+    try:
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute("SELECT 1")
+        conn.close()
+        return True, ""
+    except Exception as exc:
+        return False, str(exc)
+
+
+def _handle_health_checks():
+    if _query_flag("healthz"):
+        st.json({
+            "status": "ok",
+            "mode": "liveness",
+            "app": "alive",
+        })
+        st.stop()
+
+    if _query_flag("readyz"):
+        has_api_key = bool(os.getenv("OPENROUTER_API_KEY"))
+        db_ok, db_error = _sqlite_ready()
+
+        checks = {
+            "openrouter_api_key": "ok" if has_api_key else "missing",
+            "sqlite": "ok" if db_ok else f"error: {db_error}",
+        }
+        overall_ok = has_api_key and db_ok
+
+        st.json({
+            "status": "ok" if overall_ok else "degraded",
+            "mode": "readiness",
+            "checks": checks,
+        })
+        st.stop()
+
+
 st.set_page_config(
     page_title="AI Business Analyst Assistant",
     page_icon="AI",
     layout="wide",
 )
+
+_handle_health_checks()
 
 st.markdown(
     """
