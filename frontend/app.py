@@ -184,23 +184,23 @@ def _is_date_like(col_name: str) -> bool:
 
 def _style_dark_plot(fig):
     fig.update_layout(
-        template="plotly_white",
+        template="plotly_dark",
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="#ffffff",
-        font=dict(family="Inter, Segoe UI, Arial, sans-serif", color="#1f2933", size=12),
-        title_font=dict(size=15, color="#152238"),
+        plot_bgcolor="#111827",
+        font=dict(family="Inter, Segoe UI, Arial, sans-serif", color="#d7e2ee", size=12),
+        title_font=dict(size=15, color="#f6d365"),
         margin=dict(l=20, r=20, t=50, b=20),
         legend_title_text="",
     )
     fig.update_xaxes(
-        gridcolor="rgba(31,41,51,0.08)",
-        zerolinecolor="rgba(31,41,51,0.16)",
-        tickfont=dict(color="#354052"),
+        gridcolor="rgba(148,163,184,0.12)",
+        zerolinecolor="rgba(246,211,101,0.2)",
+        tickfont=dict(color="#b7c4d3"),
     )
     fig.update_yaxes(
-        gridcolor="rgba(31,41,51,0.08)",
-        zerolinecolor="rgba(31,41,51,0.16)",
-        tickfont=dict(color="#354052"),
+        gridcolor="rgba(148,163,184,0.12)",
+        zerolinecolor="rgba(246,211,101,0.2)",
+        tickfont=dict(color="#b7c4d3"),
     )
 
 
@@ -222,7 +222,7 @@ def build_visualization(df: pd.DataFrame):
                 counts,
                 x=col,
                 y="count",
-                color_discrete_sequence=["#0f766e"],
+                color_discrete_sequence=["#f6d365"],
                 title=f"Top Values in {_humanize_label(col)}",
             )
             _style_dark_plot(fig)
@@ -231,7 +231,7 @@ def build_visualization(df: pd.DataFrame):
 
     non_numeric_cols = [c for c in df.columns if c not in numeric_cols]
     date_cols = [c for c in df.columns if _is_date_like(c)]
-    color_seq = ["#0f766e"]
+    color_seq = ["#f6d365"]
 
     # Summary query: single row with multiple numeric metrics.
     if len(df) == 1 and len(numeric_cols) >= 2:
@@ -369,110 +369,150 @@ st.markdown(
     """
 <style>
     :root {
-        --canvas: #f5f7f4;
-        --panel: #ffffff;
-        --ink: #17212f;
-        --muted: #617083;
-        --line: #d9e1dc;
-        --teal: #0f766e;
-        --teal-dark: #115e59;
-        --coral: #c2410c;
-        --amber: #b7791f;
+        --canvas: #070b12;
+        --panel: #0f1724;
+        --panel-2: #151f2e;
+        --ink: #f4f7fb;
+        --muted: #93a4b8;
+        --line: #273244;
+        --teal: #2dd4bf;
+        --teal-dark: #14b8a6;
+        --coral: #fb7185;
+        --amber: #f6d365;
     }
 
     .stApp {
         background:
-            linear-gradient(90deg, rgba(15,118,110,0.06) 1px, transparent 1px),
-            linear-gradient(180deg, rgba(15,118,110,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(45,212,191,0.055) 1px, transparent 1px),
+            linear-gradient(180deg, rgba(246,211,101,0.04) 1px, transparent 1px),
             var(--canvas);
-        background-size: 32px 32px;
+        background-size: 44px 44px;
         color: var(--ink);
     }
     .block-container {
-        padding-top: 3rem;
+        padding-top: 2.4rem;
         padding-bottom: 3rem;
-        max-width: 1240px;
+        max-width: 1320px;
     }
     section[data-testid="stSidebar"] {
-        background: #fdfdfb;
+        background: #0b1018;
         border-right: 1px solid var(--line);
-        box-shadow: 10px 0 30px rgba(23,33,47,0.05);
+        box-shadow: 14px 0 36px rgba(0,0,0,0.28);
     }
     section[data-testid="stSidebar"] * {
         color: var(--ink);
     }
     section[data-testid="stSidebar"] .stAlert {
-        border-radius: 6px;
-        border: 1px solid rgba(15,118,110,0.2);
-        background: #ecfdf5;
+        border-radius: 4px;
+        border: 1px solid rgba(45,212,191,0.26);
+        background: rgba(20,184,166,0.12);
     }
     [data-testid="stSidebar"] hr {
         border-color: var(--line);
     }
     .main-header {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-left: 6px solid var(--teal);
-        padding: 22px 28px 18px;
-        border-radius: 8px;
+        background:
+            linear-gradient(135deg, rgba(15,23,36,0.95), rgba(10,15,24,0.96));
+        border: 1px solid rgba(45,212,191,0.24);
+        border-top: 4px solid var(--amber);
+        padding: 0;
+        border-radius: 10px;
         color: var(--ink);
         margin-bottom: 18px;
-        box-shadow: 0 18px 40px rgba(23,33,47,0.08);
+        overflow: hidden;
+        box-shadow: 0 24px 70px rgba(0,0,0,0.38);
+    }
+    .console-bar {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 18px;
+        background: rgba(255,255,255,0.035);
+        border-bottom: 1px solid rgba(148,163,184,0.14);
+        font-family: "Cascadia Mono", Consolas, monospace;
+        font-size: 0.78rem;
+        color: var(--muted);
+    }
+    .console-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 7px;
+        background: var(--teal);
+        box-shadow: 0 0 14px rgba(45,212,191,0.8);
+    }
+    .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.7fr);
+        gap: 28px;
+        padding: 28px;
+        align-items: stretch;
     }
     .main-header .eyebrow {
-        color: var(--coral);
-        font-size: 0.74rem;
+        color: var(--amber);
+        font-size: 0.72rem;
         font-weight: 800;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
     }
     .main-header h1 {
         margin: 0;
-        font-size: 2rem;
-        line-height: 1.12;
+        font-size: 2.35rem;
+        line-height: 1.05;
         color: var(--ink);
         letter-spacing: 0;
+        max-width: 740px;
     }
     .main-header p {
-        margin: 8px 0 0;
+        margin: 12px 0 0;
         color: var(--muted);
         font-size: 1rem;
-        max-width: 760px;
+        max-width: 780px;
     }
-    .metric-strip {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-        margin: 0 0 24px;
-    }
-    .metric-tile {
-        background: rgba(255,255,255,0.9);
-        border: 1px solid var(--line);
+    .hud-panel {
+        border: 1px solid rgba(246,211,101,0.26);
+        background: rgba(246,211,101,0.07);
         border-radius: 8px;
-        padding: 14px 16px;
+        padding: 16px;
+        min-height: 100%;
     }
-    .metric-tile strong {
-        display: block;
-        color: var(--ink);
-        font-size: 1rem;
-        margin-bottom: 2px;
+    .hud-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 11px 0;
+        border-bottom: 1px solid rgba(246,211,101,0.12);
     }
-    .metric-tile span {
+    .hud-row:last-child {
+        border-bottom: none;
+    }
+    .hud-label {
         color: var(--muted);
-        font-size: 0.84rem;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .hud-value {
+        color: var(--amber);
+        font-family: "Cascadia Mono", Consolas, monospace;
+        font-weight: 800;
+        white-space: nowrap;
     }
     div[data-testid="stTextInput"] input {
-        background: #ffffff;
+        background: rgba(255,255,255,0.045);
         color: var(--ink);
-        border: 1px solid #c8d4ce;
-        border-radius: 6px;
-        min-height: 46px;
-        box-shadow: inset 0 1px 0 rgba(23,33,47,0.02);
+        border: 1px solid rgba(148,163,184,0.35);
+        border-radius: 4px;
+        min-height: 50px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+        font-family: "Cascadia Mono", Consolas, monospace;
     }
     div[data-testid="stTextInput"] input:focus {
         border-color: var(--teal);
-        box-shadow: 0 0 0 3px rgba(15,118,110,0.12);
+        box-shadow: 0 0 0 3px rgba(45,212,191,0.16);
     }
     label, .stMarkdown, .stCaption, p, span, div {
         color: inherit;
@@ -482,18 +522,19 @@ st.markdown(
     }
 
     .sql-box {
-        background: #10201e;
-        color: #b7f7df;
+        background: #050a10;
+        color: #9af5de;
         padding: 13px 16px;
-        border-radius: 6px;
+        border-radius: 4px;
+        border: 1px solid rgba(45,212,191,0.2);
         border-left: 4px solid var(--teal);
         font-family: "Cascadia Mono", Consolas, monospace;
         font-size: 0.9rem;
         margin: 8px 0 14px;
     }
     .insight-box {
-        background: #ffffff;
-        border: 1px solid var(--line);
+        background: rgba(15,23,36,0.92);
+        border: 1px solid rgba(251,113,133,0.28);
         border-left: 4px solid var(--coral);
         padding: 16px 20px;
         border-radius: 8px;
@@ -506,24 +547,24 @@ st.markdown(
         font-size: 1rem;
         font-family: Inter, "Segoe UI", "Helvetica Neue", sans-serif;
         word-break: break-word;
-        box-shadow: 0 12px 24px rgba(23,33,47,0.06);
+        box-shadow: 0 18px 34px rgba(0,0,0,0.28);
     }
     .anomaly-box {
-        background: #fff7ed;
+        background: rgba(246,211,101,0.09);
         border-left: 4px solid var(--amber);
         padding: 12px 16px;
         border-radius: 6px;
         margin: 8px 0;
-        color: #3b2f1d;
+        color: #fff4bf;
     }
     .viz-box {
-        background: #ffffff;
-        border: 1px solid var(--line);
+        background: rgba(15,23,36,0.9);
+        border: 1px solid rgba(45,212,191,0.22);
         border-left: 4px solid var(--teal);
         border-radius: 8px;
         padding: 14px 14px 6px 14px;
         margin: 12px 0 14px;
-        box-shadow: 0 12px 24px rgba(23,33,47,0.06);
+        box-shadow: 0 18px 34px rgba(0,0,0,0.26);
     }
     .viz-title {
         color: var(--ink);
@@ -531,11 +572,30 @@ st.markdown(
         font-weight: 700;
         margin-bottom: 8px;
     }
+    .section-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0 10px;
+        color: var(--amber);
+        font-family: "Cascadia Mono", Consolas, monospace;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .section-label::before {
+        content: "";
+        width: 28px;
+        height: 1px;
+        background: var(--amber);
+        display: inline-block;
+    }
     .stButton > button {
-        background: #0f766e;
-        color: white;
-        border: 1px solid #0f766e;
-        border-radius: 6px;
+        background: rgba(45,212,191,0.09);
+        color: #dffcf7;
+        border: 1px solid rgba(45,212,191,0.38);
+        border-radius: 4px;
         padding: 10px 24px;
         font-weight: 600;
         width: 100%;
@@ -544,30 +604,41 @@ st.markdown(
         transition: all 0.15s ease;
     }
     .stButton > button:hover {
-        background: var(--teal-dark);
-        border-color: var(--teal-dark);
+        background: rgba(246,211,101,0.16);
+        border-color: rgba(246,211,101,0.7);
         color: white;
         transform: translateY(-1px);
     }
     .stButton > button:focus {
         color: white;
-        box-shadow: 0 0 0 3px rgba(15,118,110,0.18);
+        box-shadow: 0 0 0 3px rgba(45,212,191,0.18);
     }
     div[data-testid="stDataFrame"] {
-        border: 1px solid var(--line);
+        border: 1px solid rgba(148,163,184,0.22);
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 12px 24px rgba(23,33,47,0.05);
+        box-shadow: 0 18px 34px rgba(0,0,0,0.24);
     }
     div[data-testid="stAlert"] {
         border-radius: 8px;
     }
+    [data-testid="stVerticalBlock"] > [style*="flex-direction: column"] {
+        gap: 0.75rem;
+    }
+    .stRadio [role="radiogroup"] {
+        gap: 0.25rem;
+    }
+    .stDownloadButton > button {
+        background: rgba(251,113,133,0.11);
+        border-color: rgba(251,113,133,0.45);
+    }
     @media (max-width: 780px) {
-        .metric-strip {
+        .hero-grid {
             grid-template-columns: 1fr;
+            padding: 20px;
         }
         .main-header h1 {
-            font-size: 1.55rem;
+            font-size: 1.7rem;
         }
     }
 </style>
@@ -578,14 +649,22 @@ st.markdown(
 st.markdown(
     """
 <div class="main-header">
-    <div class="eyebrow">AI Business Analyst</div>
-    <h1>Business Insight Workbench</h1>
-    <p>Interrogate sample revenue data or your own CSV with SQL, charts, anomaly checks, and concise business notes.</p>
-</div>
-<div class="metric-strip">
-    <div class="metric-tile"><strong>Sample ready</strong><span>2,000 sales records load automatically</span></div>
-    <div class="metric-tile"><strong>SQL visible</strong><span>Every answer shows the generated query</span></div>
-    <div class="metric-tile"><strong>Recruiter friendly</strong><span>No upload required for first evaluation</span></div>
+    <div class="console-bar">
+        <span><span class="console-dot"></span>analyst-console / sample-dataset online</span>
+        <span>SQL + CHARTS + INSIGHTS</span>
+    </div>
+    <div class="hero-grid">
+        <div>
+            <div class="eyebrow">Decision Desk</div>
+            <h1>Revenue Intelligence Console</h1>
+            <p>Ask a business question, inspect the generated SQL, and review chart-ready findings without forcing recruiters to upload a file.</p>
+        </div>
+        <div class="hud-panel">
+            <div class="hud-row"><span class="hud-label">Dataset</span><span class="hud-value">sample_sales</span></div>
+            <div class="hud-row"><span class="hud-label">Rows</span><span class="hud-value">2,000</span></div>
+            <div class="hud-row"><span class="hud-label">Mode</span><span class="hud-value">auto-load</span></div>
+        </div>
+    </div>
 </div>
 """,
     unsafe_allow_html=True,
@@ -599,7 +678,7 @@ if "pending_question" in st.session_state:
     st.session_state["question_input"] = st.session_state.pop("pending_question")
 
 with st.sidebar:
-    st.header("Configuration")
+    st.header("Control Room")
     if os.getenv("OPENROUTER_API_KEY"):
         st.success("OpenRouter key is loaded from server environment.")
     else:
@@ -607,7 +686,7 @@ with st.sidebar:
         st.caption("Set OPENROUTER_API_KEY in Render Environment Variables.")
 
     st.divider()
-    st.header("Data Source")
+    st.header("Data Feed")
     data_option = st.radio("Choose data source:", ["Use Sample Data", "Upload CSV"])
 
     if data_option == "Upload CSV":
@@ -644,20 +723,21 @@ with st.sidebar:
                 st.session_state["active_columns"],
             )
 
+st.markdown('<div class="section-label">Command Input</div>', unsafe_allow_html=True)
 col1, col2 = st.columns([3, 1])
 with col1:
     question = st.text_input(
-        "Ask a business question",
+        "Question",
         key="question_input",
-        placeholder="e.g. Which category has the highest total sales?",
+        placeholder="Type a question, e.g. Which category has the highest total sales?",
     )
 with col2:
     st.markdown("<br>", unsafe_allow_html=True)
     analyze = st.button("Analyze", use_container_width=True)
 
-st.markdown("**Suggested Questions**")
+st.markdown('<div class="section-label">Quick Prompts</div>', unsafe_allow_html=True)
 if st.session_state.get("active_columns"):
-    st.caption("Auto-generated from your current dataset.")
+    st.caption("Generated from the active dataset schema.")
 else:
     st.caption("Load data to get column-specific suggestions.")
 
@@ -683,7 +763,7 @@ if analyze and question:
         with st.spinner("Converting question to SQL..."):
             sql = nl_to_sql(question, schema)
 
-        st.markdown("**Generated SQL Query:**")
+        st.markdown('<div class="section-label">SQL Trace</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="sql-box">{sql}</div>', unsafe_allow_html=True)
 
         with st.spinner("Running query on database..."):
@@ -693,7 +773,7 @@ if analyze and question:
             st.warning("Query returned no results. Try rephrasing your question.")
             st.stop()
 
-        st.markdown(f"**Query Results** - {len(df):,} rows returned")
+        st.markdown(f'<div class="section-label">Data Return - {len(df):,} rows</div>', unsafe_allow_html=True)
         st.dataframe(df, use_container_width=True)
 
         fig, viz_note = build_visualization(df)
@@ -717,7 +797,7 @@ if analyze and question:
             explanation = re.sub(r"([,.;:])(?=\S)", r"\1 ", explanation)
             explanation = re.sub(r"(?<=\d)(?=[A-Za-z])", " ", explanation)
 
-        st.markdown("**AI Business Analysis:**")
+        st.markdown('<div class="section-label">Analyst Notes</div>', unsafe_allow_html=True)
         st.markdown(
             f'<div class="insight-box">{html.escape(explanation)}</div>',
             unsafe_allow_html=True,
