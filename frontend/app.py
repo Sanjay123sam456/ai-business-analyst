@@ -184,23 +184,23 @@ def _is_date_like(col_name: str) -> bool:
 
 def _style_dark_plot(fig):
     fig.update_layout(
-        template="plotly_dark",
+        template="plotly_white",
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Segoe UI, Arial, sans-serif", color="#EAF2FF", size=12),
-        title_font=dict(size=15, color="#EAF2FF"),
+        plot_bgcolor="#ffffff",
+        font=dict(family="Inter, Segoe UI, Arial, sans-serif", color="#1f2933", size=12),
+        title_font=dict(size=15, color="#152238"),
         margin=dict(l=20, r=20, t=50, b=20),
         legend_title_text="",
     )
     fig.update_xaxes(
-        gridcolor="rgba(180,200,220,0.12)",
-        zerolinecolor="rgba(180,200,220,0.18)",
-        tickfont=dict(color="#DDE7F5"),
+        gridcolor="rgba(31,41,51,0.08)",
+        zerolinecolor="rgba(31,41,51,0.16)",
+        tickfont=dict(color="#354052"),
     )
     fig.update_yaxes(
-        gridcolor="rgba(180,200,220,0.12)",
-        zerolinecolor="rgba(180,200,220,0.18)",
-        tickfont=dict(color="#DDE7F5"),
+        gridcolor="rgba(31,41,51,0.08)",
+        zerolinecolor="rgba(31,41,51,0.16)",
+        tickfont=dict(color="#354052"),
     )
 
 
@@ -222,7 +222,7 @@ def build_visualization(df: pd.DataFrame):
                 counts,
                 x=col,
                 y="count",
-                color_discrete_sequence=["#37A2FF"],
+                color_discrete_sequence=["#0f766e"],
                 title=f"Top Values in {_humanize_label(col)}",
             )
             _style_dark_plot(fig)
@@ -231,7 +231,7 @@ def build_visualization(df: pd.DataFrame):
 
     non_numeric_cols = [c for c in df.columns if c not in numeric_cols]
     date_cols = [c for c in df.columns if _is_date_like(c)]
-    color_seq = ["#37A2FF"]
+    color_seq = ["#0f766e"]
 
     # Summary query: single row with multiple numeric metrics.
     if len(df) == 1 and len(numeric_cols) >= 2:
@@ -368,70 +368,207 @@ _handle_health_checks()
 st.markdown(
     """
 <style>
-    .main-header {
-        background: linear-gradient(135deg, #1e3a5f, #2196F3);
-        padding: 20px 30px;
-        border-radius: 12px;
-        color: white;
-        margin-bottom: 24px;
+    :root {
+        --canvas: #f5f7f4;
+        --panel: #ffffff;
+        --ink: #17212f;
+        --muted: #617083;
+        --line: #d9e1dc;
+        --teal: #0f766e;
+        --teal-dark: #115e59;
+        --coral: #c2410c;
+        --amber: #b7791f;
     }
-    .main-header h1 { margin: 0; font-size: 2rem; }
-    .main-header p { margin: 4px 0 0; opacity: 0.9; font-size: 1rem; }
+
+    .stApp {
+        background:
+            linear-gradient(90deg, rgba(15,118,110,0.06) 1px, transparent 1px),
+            linear-gradient(180deg, rgba(15,118,110,0.05) 1px, transparent 1px),
+            var(--canvas);
+        background-size: 32px 32px;
+        color: var(--ink);
+    }
+    .block-container {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+        max-width: 1240px;
+    }
+    section[data-testid="stSidebar"] {
+        background: #fdfdfb;
+        border-right: 1px solid var(--line);
+        box-shadow: 10px 0 30px rgba(23,33,47,0.05);
+    }
+    section[data-testid="stSidebar"] * {
+        color: var(--ink);
+    }
+    section[data-testid="stSidebar"] .stAlert {
+        border-radius: 6px;
+        border: 1px solid rgba(15,118,110,0.2);
+        background: #ecfdf5;
+    }
+    [data-testid="stSidebar"] hr {
+        border-color: var(--line);
+    }
+    .main-header {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-left: 6px solid var(--teal);
+        padding: 22px 28px 18px;
+        border-radius: 8px;
+        color: var(--ink);
+        margin-bottom: 18px;
+        box-shadow: 0 18px 40px rgba(23,33,47,0.08);
+    }
+    .main-header .eyebrow {
+        color: var(--coral);
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .main-header h1 {
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.12;
+        color: var(--ink);
+        letter-spacing: 0;
+    }
+    .main-header p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 1rem;
+        max-width: 760px;
+    }
+    .metric-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin: 0 0 24px;
+    }
+    .metric-tile {
+        background: rgba(255,255,255,0.9);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px 16px;
+    }
+    .metric-tile strong {
+        display: block;
+        color: var(--ink);
+        font-size: 1rem;
+        margin-bottom: 2px;
+    }
+    .metric-tile span {
+        color: var(--muted);
+        font-size: 0.84rem;
+    }
+    div[data-testid="stTextInput"] input {
+        background: #ffffff;
+        color: var(--ink);
+        border: 1px solid #c8d4ce;
+        border-radius: 6px;
+        min-height: 46px;
+        box-shadow: inset 0 1px 0 rgba(23,33,47,0.02);
+    }
+    div[data-testid="stTextInput"] input:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(15,118,110,0.12);
+    }
+    label, .stMarkdown, .stCaption, p, span, div {
+        color: inherit;
+    }
+    div[data-testid="stMarkdownContainer"] p {
+        color: var(--ink);
+    }
 
     .sql-box {
-        background: #1e1e1e;
-        color: #00ff88;
-        padding: 12px 16px;
-        border-radius: 8px;
-        font-family: monospace;
+        background: #10201e;
+        color: #b7f7df;
+        padding: 13px 16px;
+        border-radius: 6px;
+        border-left: 4px solid var(--teal);
+        font-family: "Cascadia Mono", Consolas, monospace;
         font-size: 0.9rem;
-        margin: 8px 0;
+        margin: 8px 0 14px;
     }
     .insight-box {
-        background: linear-gradient(135deg, #132217, #1b2d21);
-        border-left: 4px solid #4CAF50;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--coral);
         padding: 16px 20px;
         border-radius: 8px;
         margin: 12px 0;
-        color: #e8f5e9;
+        color: var(--ink);
         line-height: 1.65;
         white-space: pre-wrap;
         max-height: 340px;
         overflow-y: auto;
         font-size: 1rem;
-        font-family: "Segoe UI", "Inter", "Helvetica Neue", sans-serif;
+        font-family: Inter, "Segoe UI", "Helvetica Neue", sans-serif;
         word-break: break-word;
+        box-shadow: 0 12px 24px rgba(23,33,47,0.06);
     }
     .anomaly-box {
-        background: #fff3e0;
-        border-left: 4px solid #FF9800;
+        background: #fff7ed;
+        border-left: 4px solid var(--amber);
         padding: 12px 16px;
-        border-radius: 8px;
+        border-radius: 6px;
         margin: 8px 0;
-        color: #3e2723;
+        color: #3b2f1d;
     }
     .viz-box {
-        background: linear-gradient(135deg, #101a2a, #0c1624);
-        border: 1px solid #2f5b87;
-        border-left: 4px solid #37A2FF;
-        border-radius: 10px;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--teal);
+        border-radius: 8px;
         padding: 14px 14px 6px 14px;
         margin: 12px 0 14px;
+        box-shadow: 0 12px 24px rgba(23,33,47,0.06);
     }
     .viz-title {
-        color: #dbeaff;
+        color: var(--ink);
         font-size: 0.98rem;
         font-weight: 700;
         margin-bottom: 8px;
     }
     .stButton > button {
-        background: linear-gradient(135deg, #1e3a5f, #2196F3);
+        background: #0f766e;
         color: white;
-        border: none;
-        border-radius: 8px;
+        border: 1px solid #0f766e;
+        border-radius: 6px;
         padding: 10px 24px;
         font-weight: 600;
         width: 100%;
+        min-height: 44px;
+        box-shadow: none;
+        transition: all 0.15s ease;
+    }
+    .stButton > button:hover {
+        background: var(--teal-dark);
+        border-color: var(--teal-dark);
+        color: white;
+        transform: translateY(-1px);
+    }
+    .stButton > button:focus {
+        color: white;
+        box-shadow: 0 0 0 3px rgba(15,118,110,0.18);
+    }
+    div[data-testid="stDataFrame"] {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 12px 24px rgba(23,33,47,0.05);
+    }
+    div[data-testid="stAlert"] {
+        border-radius: 8px;
+    }
+    @media (max-width: 780px) {
+        .metric-strip {
+            grid-template-columns: 1fr;
+        }
+        .main-header h1 {
+            font-size: 1.55rem;
+        }
     }
 </style>
 """,
@@ -441,8 +578,14 @@ st.markdown(
 st.markdown(
     """
 <div class="main-header">
-    <h1>AI Business Analyst Assistant</h1>
-    <p>Ask business questions in plain English and get SQL, data, charts, and AI insights.</p>
+    <div class="eyebrow">AI Business Analyst</div>
+    <h1>Business Insight Workbench</h1>
+    <p>Interrogate sample revenue data or your own CSV with SQL, charts, anomaly checks, and concise business notes.</p>
+</div>
+<div class="metric-strip">
+    <div class="metric-tile"><strong>Sample ready</strong><span>2,000 sales records load automatically</span></div>
+    <div class="metric-tile"><strong>SQL visible</strong><span>Every answer shows the generated query</span></div>
+    <div class="metric-tile"><strong>Recruiter friendly</strong><span>No upload required for first evaluation</span></div>
 </div>
 """,
     unsafe_allow_html=True,
