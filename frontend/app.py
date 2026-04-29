@@ -142,7 +142,7 @@ def load_uploaded_csv_to_db(uploaded_file, table_name: str = "sales"):
     ]
     for col in df.columns:
         if any(k in col for k in ["date", "time", "month", "year", "day"]):
-            parsed = pd.to_datetime(df[col], errors="coerce", infer_datetime_format=True)
+            parsed = pd.to_datetime(df[col], errors="coerce")
             if parsed.notna().mean() >= 0.8:
                 df[col] = parsed.dt.strftime("%Y-%m-%d")
 
@@ -154,6 +154,23 @@ def load_uploaded_csv_to_db(uploaded_file, table_name: str = "sales"):
         conn.close()
 
     return df.shape, list(df.columns)
+
+
+def remember_loaded_dataset(source: str, shape: tuple[int, int], cols: list[str]):
+    st.session_state["active_data_source"] = source
+    st.session_state["active_shape"] = shape
+    st.session_state["active_columns"] = cols
+    st.session_state["example_questions"] = build_example_questions(cols)
+
+
+def show_loaded_dataset(shape: tuple[int, int], cols: list[str]):
+    st.success(f"Loaded {shape[0]:,} rows x {shape[1]} columns")
+    preview_cols = ", ".join(cols[:8])
+    if len(cols) > 8:
+        preview_cols += f", +{len(cols) - 8} more"
+    st.caption(f"Columns ({len(cols)}): {preview_cols}")
+    with st.expander("View all columns"):
+        st.write(", ".join(cols))
 
 
 def _humanize_label(col_name: str) -> str:
@@ -459,32 +476,30 @@ with st.sidebar:
                     file_obj.write(uploaded_file.getvalue())
 
                 shape, cols = load_uploaded_csv_to_db(uploaded_file, "sales")
-                st.session_state["active_columns"] = cols
-                st.session_state["example_questions"] = build_example_questions(cols)
-
-                st.success(f"Loaded {shape[0]:,} rows x {shape[1]} columns")
-                preview_cols = ", ".join(cols[:8])
-                if len(cols) > 8:
-                    preview_cols += f", +{len(cols) - 8} more"
-                st.caption(f"Columns ({len(cols)}): {preview_cols}")
-                with st.expander("View all columns"):
-                    st.write(", ".join(cols))
+                remember_loaded_dataset("upload", shape, cols)
+                show_loaded_dataset(shape, cols)
             except Exception as err:
                 st.error(f"Could not load CSV: {err}")
                 st.info("Tip: Save your file as UTF-8 CSV, then upload again.")
     else:
-        if st.button("Load Sample Data"):
+        sample_is_active = st.session_state.get("active_data_source") == "sample"
+        should_load_sample = not sample_is_active
+
+        if should_load_sample:
             with st.spinner("Loading sample sales data..."):
                 shape, cols = load_sample_data()
-                st.session_state["active_columns"] = cols
-                st.session_state["example_questions"] = build_example_questions(cols)
-                st.success(f"Loaded {shape[0]:,} rows x {shape[1]} columns")
-                preview_cols = ", ".join(cols[:8])
-                if len(cols) > 8:
-                    preview_cols += f", +{len(cols) - 8} more"
-                st.caption(f"Columns ({len(cols)}): {preview_cols}")
-                with st.expander("View all columns"):
-                    st.write(", ".join(cols))
+                remember_loaded_dataset("sample", shape, cols)
+
+        if st.button("Reload Sample Data"):
+            with st.spinner("Reloading sample sales data..."):
+                shape, cols = load_sample_data()
+                remember_loaded_dataset("sample", shape, cols)
+
+        if st.session_state.get("active_data_source") == "sample":
+            show_loaded_dataset(
+                st.session_state["active_shape"],
+                st.session_state["active_columns"],
+            )
 
 col1, col2 = st.columns([3, 1])
 with col1:
@@ -499,7 +514,7 @@ with col2:
 
 st.markdown("**Suggested Questions**")
 if st.session_state.get("active_columns"):
-    st.caption("Auto-generated from your uploaded dataset.")
+    st.caption("Auto-generated from your current dataset.")
 else:
     st.caption("Load data to get column-specific suggestions.")
 

@@ -31,7 +31,7 @@ def _normalize_for_sqlite(df: pd.DataFrame) -> pd.DataFrame:
     # Convert likely date columns to ISO format so SQLite date functions work.
     for col in cleaned.columns:
         if any(k in col for k in ["date", "time", "month", "year", "day"]):
-            parsed = pd.to_datetime(cleaned[col], errors="coerce", infer_datetime_format=True)
+            parsed = pd.to_datetime(cleaned[col], errors="coerce")
             if parsed.notna().mean() >= 0.8:
                 cleaned[col] = parsed.dt.strftime("%Y-%m-%d")
 
